@@ -31,12 +31,16 @@ Before running the project, ensure you have the following installed:
 
 ## Installation
 
+copy URL for  backend branch
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/shelaranuradha2024/file-directory.git
-cd file-directory-backend
+git clone --branch backend --single-branch https://github.com/shelaranuradha2024/file-directory.git
 
 npm install
+
+npm start
+
+### 2(optional). install ZIP of backend branch
 
 
 ##  Create a PostgreSQL database 
