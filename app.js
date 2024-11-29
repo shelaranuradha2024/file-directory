@@ -4,163 +4,182 @@ const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 5000; // Heroku/Render provides a dynamic port
 
-// PostgreSQL connection settings
+// PostgreSQL connection settings using the external URL
 const pool = new Pool({
-  host: 'localhost', // Replace with your database URL on Render (if hosted there)
-  user: 'postgres',
-  port: 5432,
-  password: 'ANuradha#24',
-  database: 'fileDirectory',
+  connectionString: 'postgresql://filedirectory_f1s0_user:BVCkItIpWA4soQk7EdR8IUM2Og211Ei0@dpg-ct4ituqj1k6c73egrr10-a.singapore-postgres.render.com/filedirectory_f1s0',
+  ssl: {
+    rejectUnauthorized: false, // This is necessary for Render's PostgreSQL setup
+  },
 });
 
 // CORS configuration to allow frontend's domain
 app.use(cors({
-  origin: 'https://file-directory-frontend.onrender.com', // Replace with your frontend URL
+  origin: 'https://file-directory-frontend.onrender.com',  // Replace with your frontend URL
 }));
 
 app.use(express.json()); // To parse JSON requests
 
-// API endpoints for folder and file management
-
-// Get all folders
+// Fetch the list of folders and files
 app.get('/api/folders', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM folders');
+    // Fetch parent folders (those with null parent_folder_id)
+    const result = await pool.query(`
+      SELECT * FROM folders WHERE parent_folder_id IS NULL;
+    `);
     const folders = result.rows;
-    res.json(folders);
-  } catch (error) {
-    console.error('Error fetching folders:', error);
-    res.status(500).json({ error: 'Error fetching folders' });
+
+    // Recursively fetch subfolders and files for each folder
+    for (const folder of folders) {
+      // Fetch subfolders (children)
+      const subfoldersResult = await pool.query(`
+        SELECT * FROM folders WHERE parent_folder_id = $1;
+      `, [folder.id]);
+      folder.children = subfoldersResult.rows;
+
+      // Fetch files within the folder
+      const filesResult = await pool.query(`
+        SELECT * FROM files WHERE folder_id = $1;
+      `, [folder.id]);
+      folder.files = filesResult.rows;
+
+      // For each subfolder, fetch files and its subfolders
+      for (const subfolder of folder.children) {
+        const subfolderFiles = await pool.query(`
+          SELECT * FROM files WHERE folder_id = $1;
+        `, [subfolder.id]);
+        subfolder.files = subfolderFiles.rows;
+      }
+    }
+
+    res.json(folders); // Send the folder structure including files and subfolders
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching folders');
   }
 });
 
 // Create a new folder
 app.post('/api/folders', async (req, res) => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'Folder name is required' });
-  }
-
+  const { name, parent_folder_id } = req.body;
   try {
-    const result = await pool.query('INSERT INTO folders (name) VALUES ($1) RETURNING *', [name]);
+    const result = await pool.query(`
+      INSERT INTO folders (name, parent_folder_id) 
+      VALUES ($1, $2) RETURNING *;
+    `, [name, parent_folder_id]);
+
     const newFolder = result.rows[0];
-    res.status(201).json(newFolder);
-  } catch (error) {
-    console.error('Error creating folder:', error);
-    res.status(500).json({ error: 'Error creating folder' });
+
+    // Initialize children as an empty array in the response
+    newFolder.children = [];
+
+    res.status(201).json(newFolder); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error creating folder');
   }
 });
 
-// Update folder name
+// Create a new file in a folder
+app.post('/api/files', async (req, res) => {
+  const { name, folderId } = req.body;
+  try {
+    const result = await pool.query(`
+      INSERT INTO files (name, folder_id) 
+      VALUES ($1, $2) RETURNING *;
+    `, [name, folderId]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error creating file');
+  }
+});
+
+// Rename a folder
 app.put('/api/folders/:id', async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: 'New folder name is required' });
-  }
-
   try {
-    const result = await pool.query('UPDATE folders SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
-    const updatedFolder = result.rows[0];
-    if (!updatedFolder) {
-      return res.status(404).json({ error: 'Folder not found' });
+    const result = await pool.query(`
+      UPDATE folders 
+      SET name = $1 
+      WHERE id = $2 RETURNING *;
+    `, [name, id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).send('Folder not found');
     }
-    res.json(updatedFolder);
-  } catch (error) {
-    console.error('Error updating folder:', error);
-    res.status(500).json({ error: 'Error updating folder' });
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error renaming folder');
   }
 });
 
 // Delete a folder
 app.delete('/api/folders/:id', async (req, res) => {
   const { id } = req.params;
-
   try {
-    const result = await pool.query('DELETE FROM folders WHERE id = $1 RETURNING *', [id]);
-    const deletedFolder = result.rows[0];
-    if (!deletedFolder) {
-      return res.status(404).json({ error: 'Folder not found' });
+    const result = await pool.query(`
+      DELETE FROM folders 
+      WHERE id = $1 RETURNING *;
+    `, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).send('Folder not found');
     }
-    res.json({ message: 'Folder deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting folder:', error);
-    res.status(500).json({ error: 'Error deleting folder' });
+
+    res.status(204).send(); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error deleting folder');
   }
 });
 
-// Get all files in a folder
-app.get('/api/folders/:folderId/files', async (req, res) => {
-  const { folderId } = req.params;
-
-  try {
-    const result = await pool.query('SELECT * FROM files WHERE folder_id = $1', [folderId]);
-    const files = result.rows;
-    res.json(files);
-  } catch (error) {
-    console.error('Error fetching files:', error);
-    res.status(500).json({ error: 'Error fetching files' });
-  }
-});
-
-// Create a new file in a folder
-app.post('/api/files', async (req, res) => {
-  const { folderId, name } = req.body;
-  if (!folderId || !name) {
-    return res.status(400).json({ error: 'Folder ID and file name are required' });
-  }
-
-  try {
-    const result = await pool.query('INSERT INTO files (folder_id, name) VALUES ($1, $2) RETURNING *', [folderId, name]);
-    const newFile = result.rows[0];
-    res.status(201).json(newFile);
-  } catch (error) {
-    console.error('Error creating file:', error);
-    res.status(500).json({ error: 'Error creating file' });
-  }
-});
-
-// Update file name
+// Rename a file
 app.put('/api/files/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: 'New file name is required' });
-  }
-
+  const { id } = req.params;  // File ID to be renamed
+  const { name } = req.body;  // New file name
   try {
-    const result = await pool.query('UPDATE files SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
-    const updatedFile = result.rows[0];
-    if (!updatedFile) {
-      return res.status(404).json({ error: 'File not found' });
+    const result = await pool.query(`
+      UPDATE files 
+      SET name = $1 
+      WHERE id = $2 RETURNING *;
+    `, [name, id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).send('File not found');
     }
-    res.json(updatedFile);
-  } catch (error) {
-    console.error('Error updating file:', error);
-    res.status(500).json({ error: 'Error updating file' });
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error renaming file:', err);
+    res.status(500).send('Error renaming file');
   }
 });
 
 // Delete a file
 app.delete('/api/files/:id', async (req, res) => {
   const { id } = req.params;
-
   try {
-    const result = await pool.query('DELETE FROM files WHERE id = $1 RETURNING *', [id]);
-    const deletedFile = result.rows[0];
-    if (!deletedFile) {
-      return res.status(404).json({ error: 'File not found' });
+    const result = await pool.query(`
+      DELETE FROM files 
+      WHERE id = $1 RETURNING *;
+    `, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).send('File not found');
     }
-    res.json({ message: 'File deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    res.status(500).json({ error: 'Error deleting file' });
+
+    res.status(204).send(); // No content to return on successful deletion
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error deleting file');
   }
 });
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Server is running on https://file-directory-2l36.onrender.com`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
