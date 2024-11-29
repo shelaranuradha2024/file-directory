@@ -5,16 +5,14 @@ const app = express();
 const port = process.env.PORT || 5000; // Heroku/Render provides a dynamic port
 
 require('dotenv').config(); // Load environment variables from .env file
-// PostgreSQL connection settings using the external URL
 
+// PostgreSQL connection settings using the external URL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Use environment variable
   ssl: {
     rejectUnauthorized: false,
   },
 });
-
-
 
 app.use(cors({
   origin: 'https://file-directory-frontend.onrender.com',  // Your frontend URL on Render
