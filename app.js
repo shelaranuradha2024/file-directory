@@ -5,22 +5,24 @@ const app = express();
 const port = process.env.PORT || 5000; // Heroku/Render provides a dynamic port
 
 // PostgreSQL connection settings using the external URL
-const { Pool } = require('pg');
-
 const pool = new Pool({
-  connectionString: 'postgresql://filedirectory_f1s0_user:BVCkItIpWA4soQk7EdR8IUM2Og211Ei0@dpg-ct4ituqj1k6c73egrr10-a.singapore-postgres.render.com/filedirectory_f1s0',
+  connectionString: process.env.DATABASE_URL,  // Access the DATABASE_URL environment variable
   ssl: {
-    rejectUnauthorized: false // Required for SSL connections to Render's PostgreSQL
-  }
+    rejectUnauthorized: false,  // Required for Render's PostgreSQL SSL connection
+  },
 });
 
 
-// CORS configuration to allow frontend's domain
 app.use(cors({
-  origin: 'https://file-directory-frontend.onrender.com',  // Replace with your frontend URL
+  origin: 'https://file-directory-frontend.onrender.com',  // Your frontend URL on Render
 }));
 
-app.use(express.json()); // To parse JSON requests
+app.use(express.json());  // To parse JSON requests
+
+// Root route to test the server is running
+app.get('/', (req, res) => {
+  res.send('Server is running!');
+});
 
 // Fetch the list of folders and files
 app.get('/api/folders', async (req, res) => {
