@@ -64,7 +64,6 @@ app.get('/api/folders', async (req, res) => {
   }
 });
 
-// Create a new folder
 app.post('/api/folders', async (req, res) => {
   const { name, parent_folder_id } = req.body;
   try {
@@ -74,16 +73,13 @@ app.post('/api/folders', async (req, res) => {
     `, [name, parent_folder_id]);
 
     const newFolder = result.rows[0];
-
-    // Initialize children as an empty array in the response
-    newFolder.children = [];
-
-    res.status(201).json(newFolder); 
+    res.status(201).json(newFolder); // Send the newly created folder back
   } catch (err) {
-    console.error(err);
+    console.error('Error creating folder:', err);
     res.status(500).send('Error creating folder');
   }
 });
+
 
 // Create a new file in a folder
 app.post('/api/files', async (req, res) => {
