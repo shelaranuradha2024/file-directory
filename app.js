@@ -5,12 +5,15 @@ const app = express();
 const port = process.env.PORT || 5000; // Heroku/Render provides a dynamic port
 
 // PostgreSQL connection settings using the external URL
+const { Pool } = require('pg');
+
 const pool = new Pool({
   connectionString: 'postgresql://filedirectory_f1s0_user:BVCkItIpWA4soQk7EdR8IUM2Og211Ei0@dpg-ct4ituqj1k6c73egrr10-a.singapore-postgres.render.com/filedirectory_f1s0',
   ssl: {
-    rejectUnauthorized: false, // This is necessary for Render's PostgreSQL setup
-  },
+    rejectUnauthorized: false // Required for SSL connections to Render's PostgreSQL
+  }
 });
+
 
 // CORS configuration to allow frontend's domain
 app.use(cors({
