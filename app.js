@@ -41,8 +41,9 @@ app.get('/', (req, res) => {
 app.get('/api/folders', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM folders WHERE parent_folder_id IS NULL;`
-    );
+  `SELECT * FROM public.folders WHERE parent_folder_id IS NULL;`
+);
+  }
     const folders = result.rows;
 
     for (const folder of folders) {
