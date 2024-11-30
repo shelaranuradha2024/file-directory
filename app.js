@@ -73,6 +73,12 @@ app.get('/api/folders', async (req, res) => {
     res.status(500).send('Error fetching folders');
   }
 });
+app.get("/api/folders", (req, res) => {
+  // Assuming your folders are stored in an array or database
+  console.log("Request received for folders");
+  // Add more debugging logic here if needed
+  res.json(folders);  // Ensure that folders is the correct data to return
+});
 
 // Create a folder
 app.post('/api/folders', async (req, res) => {
