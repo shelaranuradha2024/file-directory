@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const app = express();
-const port = process.env.PORT || 5000; // Render provides a dynamic port
+const port = process.env.PORT || 10000;  // Render provides a dynamic port
 
 require('dotenv').config(); // Load environment variables from .env file
 
