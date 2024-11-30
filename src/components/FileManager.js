@@ -7,8 +7,10 @@ const FileManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const apiBase = "https://file-directory-2l36.onrender.com/api";
+
   useEffect(() => {
-    fetch("http://localhost:5000/api/folders")
+    fetch(`${apiBase}/folders`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch folders");
@@ -29,7 +31,7 @@ const FileManager = () => {
   const handleCreateFolder = async () => {
     const folderName = prompt("Enter folder name");
     if (folderName) {
-      const response = await fetch("http://localhost:5000/api/folders", {
+      const response = await fetch(`${apiBase}/folders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,7 +46,7 @@ const FileManager = () => {
   const handleCreateFile = async (folderId) => {
     const fileName = prompt("Enter file name");
     if (fileName) {
-      const response = await fetch("http://localhost:5000/api/files", {
+      const response = await fetch(`${apiBase}/files`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,7 +67,7 @@ const FileManager = () => {
   const handleRename = async (id) => {
     const newName = prompt("Enter new folder name");
     if (newName) {
-      const response = await fetch(`http://localhost:5000/api/folders/${id}`, {
+      const response = await fetch(`${apiBase}/folders/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +88,7 @@ const FileManager = () => {
       "Are you sure you want to delete this folder?"
     );
     if (confirmDelete) {
-      await fetch(`http://localhost:5000/api/folders/${id}`, { method: "DELETE" });
+      await fetch(`${apiBase}/folders/${id}`, { method: "DELETE" });
       setDirectories((prev) => prev.filter((folder) => folder.id !== id));
     }
   };
@@ -94,7 +96,7 @@ const FileManager = () => {
   const handleRenameFile = async (fileId, folderId) => {
     const newName = prompt("Enter new file name");
     if (newName) {
-      const response = await fetch(`http://localhost:5000/api/files/${fileId}`, {
+      const response = await fetch(`${apiBase}/files/${fileId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -120,7 +122,7 @@ const FileManager = () => {
   const handleDeleteFile = async (fileId, folderId) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this file?");
     if (confirmDelete) {
-      await fetch(`http://localhost:5000/api/files/${fileId}`, { method: "DELETE" });
+      await fetch(`${apiBase}/files/${fileId}`, { method: "DELETE" });
       setDirectories((prev) =>
         prev.map((folder) =>
           folder.id === folderId
