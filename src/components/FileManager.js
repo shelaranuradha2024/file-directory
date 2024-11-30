@@ -7,7 +7,7 @@ const FileManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const apiBase = process.env.REACT_APP_API_URL || "http://localhost:10000/api"; // Uses environment variable
+  const apiBase = process.env.REACT_APP_API_URL || "http://localhost:10000/api"; // Ensure the API URL is correct
 
   useEffect(() => {
     fetch(`${apiBase}/folders`)
@@ -26,7 +26,7 @@ const FileManager = () => {
         setLoading(false);
         console.error(err);
       });
-  }, [apiBase]); // apiBase added to the dependency array
+  }, [apiBase]);
 
   const handleCreateFolder = async () => {
     const folderName = prompt("Enter folder name");
