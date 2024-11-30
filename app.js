@@ -13,6 +13,13 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
 });
+pool.connect((err, client, done) => {
+  if (err) {
+    console.error('Database connection error', err.stack);
+  } else {
+    console.log('Connected to the database');
+  }
+});
 
 app.use(cors({
   origin: 'https://file-directory-frontend.onrender.com',  // Your frontend URL on Render
@@ -24,6 +31,7 @@ app.use(express.json()); // To parse JSON requests
 app.get('/', (req, res) => {
   res.send('Server is running!');
 });
+
 
 // Fetch the list of folders and files
 app.get('/api/folders', async (req, res) => {
