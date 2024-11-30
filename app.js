@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+app.use(cors());
 const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 10000;  // Render provides a dynamic port
