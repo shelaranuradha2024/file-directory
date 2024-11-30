@@ -6,6 +6,9 @@ const port = process.env.PORT || 5000; // Render provides a dynamic port
 
 require('dotenv').config(); // Load environment variables from .env file
 
+// Log the database URL for debugging purposes (do this in local development only)
+console.log("Connecting to database with URL:", process.env.DATABASE_URL);
+
 // PostgreSQL connection settings using the external URL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Use environment variable
@@ -13,6 +16,8 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
 });
+
+// Test the connection to the database
 pool.connect((err, client, done) => {
   if (err) {
     console.error('Database connection error', err.stack);
@@ -31,7 +36,6 @@ app.use(express.json()); // To parse JSON requests
 app.get('/', (req, res) => {
   res.send('Server is running!');
 });
-
 
 // Fetch the list of folders and files
 app.get('/api/folders', async (req, res) => {
@@ -65,7 +69,7 @@ app.get('/api/folders', async (req, res) => {
 
     res.json(folders);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching folders:', err);
     res.status(500).send('Error fetching folders');
   }
 });
