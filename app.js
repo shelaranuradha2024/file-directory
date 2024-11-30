@@ -1,9 +1,26 @@
 const express = require('express');
 const cors = require('cors');
-app.use(cors());
-const { Pool } = require('pg');
 const app = express();
-const port = process.env.PORT || 10000;  // Render provides a dynamic port
+
+// Use CORS middleware first, before any routes
+app.use(cors());
+app.use(express.json()); // to parse JSON request bodies
+
+// Example route
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
+
+// Your other routes
+app.get('/api/folders', (req, res) => {
+  // Handle fetching folders
+});
+
+// Listen on a port
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 require('dotenv').config(); // Load environment variables from .env file
 
