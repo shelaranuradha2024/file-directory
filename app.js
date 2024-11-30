@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const { Pool } = require('pg');
 const app = express();
+require('dotenv').config(); // Load environment variables from .env file
 
 // Use CORS middleware first, before any routes
 app.use(cors());
@@ -11,29 +13,18 @@ app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
 
-// Your other routes
-app.get('/api/folders', (req, res) => {
-  // Handle fetching folders
-});
-
-// Listen on a port
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-require('dotenv').config(); // Load environment variables from .env file
-
-// Log the database URL for debugging purposes (do this in local development only)
-console.log("Connecting to database with URL:", process.env.DATABASE_URL);
-
-// PostgreSQL connection settings using the external URL
+// Set up database connection pool for production
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Use environment variable
+  connectionString: process.env.DATABASE_URL, // Use the DATABASE_URL environment variable from Render
   ssl: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: false, // Render requires SSL connection
   },
 });
+
+// Log the database URL for debugging purposes (only useful in development)
+if (process.env.NODE_ENV !== 'production') {
+  console.log("Connecting to database with URL:", process.env.DATABASE_URL);
+}
 
 // Test the connection to the database
 pool.connect((err, client, done) => {
@@ -42,17 +33,6 @@ pool.connect((err, client, done) => {
   } else {
     console.log('Connected to the database');
   }
-});
-
-app.use(cors({
-  origin: 'https://file-directory-frontend.onrender.com',  // Your frontend URL on Render
-}));
-
-app.use(express.json()); // To parse JSON requests
-
-// Root route to test the server is running
-app.get('/', (req, res) => {
-  res.send('Server is running!');
 });
 
 // Fetch the list of folders and files
@@ -91,12 +71,6 @@ app.get('/api/folders', async (req, res) => {
     res.status(500).send('Error fetching folders');
   }
 });
-app.get("/api/folders", (req, res) => {
-  // Assuming your folders are stored in an array or database
-  console.log("Request received for folders");
-  // Add more debugging logic here if needed
-  res.json(folders);  // Ensure that folders is the correct data to return
-});
 
 // Create a folder
 app.post('/api/folders', async (req, res) => {
@@ -114,6 +88,7 @@ app.post('/api/folders', async (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+const PORT = process.env.PORT || 10000; // Use the port from environment variables, or default to 10000
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
