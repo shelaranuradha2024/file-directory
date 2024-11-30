@@ -8,11 +8,6 @@ require('dotenv').config(); // Load environment variables from .env file
 app.use(cors());
 app.use(express.json()); // to parse JSON request bodies
 
-// Example route
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
-
 // Set up database connection pool for production
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Use the DATABASE_URL environment variable from Render
@@ -84,6 +79,77 @@ app.post('/api/folders', async (req, res) => {
   } catch (err) {
     console.error('Error creating folder:', err);
     res.status(500).send('Error creating folder');
+  }
+});
+
+// Create a file
+app.post('/api/files', async (req, res) => {
+  const { folderId, name } = req.body;
+  try {
+    const result = await pool.query(
+      `INSERT INTO files (folder_id, name) VALUES ($1, $2) RETURNING *;`,
+      [folderId, name]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating file:', err);
+    res.status(500).send('Error creating file');
+  }
+});
+
+// Rename a folder
+app.put('/api/folders/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE folders SET name = $1 WHERE id = $2 RETURNING *;`,
+      [name, id]
+    );
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error renaming folder:', err);
+    res.status(500).send('Error renaming folder');
+  }
+});
+
+// Delete a folder
+app.delete('/api/folders/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(`DELETE FROM folders WHERE id = $1;`, [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error('Error deleting folder:', err);
+    res.status(500).send('Error deleting folder');
+  }
+});
+
+// Rename a file
+app.put('/api/files/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE files SET name = $1 WHERE id = $2 RETURNING *;`,
+      [name, id]
+    );
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error renaming file:', err);
+    res.status(500).send('Error renaming file');
+  }
+});
+
+// Delete a file
+app.delete('/api/files/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(`DELETE FROM files WHERE id = $1;`, [id]);
+    res.status(204).send();
+  } catch (err) {
+    console.error('Error deleting file:', err);
+    res.status(500).send('Error deleting file');
   }
 });
 
