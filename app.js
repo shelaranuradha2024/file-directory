@@ -39,19 +39,22 @@ app.get('/api/folders', async (req, res) => {
     );
     const folders = result.rows;
 
+    // Fetch files for all folders in one query
     for (const folder of folders) {
-      const subfoldersResult = await pool.query(
-        `SELECT * FROM folders WHERE parent_folder_id = $1;`,
-        [folder.id]
-      );
-      folder.children = subfoldersResult.rows;
-
       const filesResult = await pool.query(
         `SELECT * FROM files WHERE folder_id = $1;`,
         [folder.id]
       );
       folder.files = filesResult.rows;
 
+      // Fetch subfolders for each folder
+      const subfoldersResult = await pool.query(
+        `SELECT * FROM folders WHERE parent_folder_id = $1;`,
+        [folder.id]
+      );
+      folder.children = subfoldersResult.rows;
+
+      // Optionally, fetch files for subfolders in one query as well
       for (const subfolder of folder.children) {
         const subfolderFiles = await pool.query(
           `SELECT * FROM files WHERE folder_id = $1;`,
@@ -67,6 +70,7 @@ app.get('/api/folders', async (req, res) => {
     res.status(500).send('Error fetching folders');
   }
 });
+
 
 // Create a folder
 app.post('/api/folders', async (req, res) => {
