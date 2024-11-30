@@ -6,6 +6,7 @@ require('dotenv').config(); // Load environment variables from .env file
 
 // Use CORS middleware first, before any routes
 app.use(cors());
+app.use(express.static('public'));  
 app.use(express.json()); // to parse JSON request bodies
 
 // Set up database connection pool for production
