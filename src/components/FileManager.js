@@ -7,7 +7,7 @@ const FileManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const apiBase = "https://file-directory-2l36.onrender.com/api";
+const apiBase = process.env.REACT_APP_API_URL || "http://localhost:10000/api";
 
   useEffect(() => {
     fetch(`${apiBase}/folders`)
