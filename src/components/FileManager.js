@@ -7,159 +7,38 @@ const FileManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const apiBase = process.env.REACT_APP_API_URL || "http://localhost:10000/api"; // Ensure the API URL is correct
+  const apiBase = process.env.REACT_APP_API_URL || "http://localhost:10000/api";
 
   useEffect(() => {
-    fetch(`${apiBase}/folders`)
-      .then((response) => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`${apiBase}/folders`);
         if (!response.ok) {
-          throw new Error("Failed to fetch folders");
+          throw new Error(`Error: ${response.status} - ${response.statusText}`);
         }
-        return response.json();
-      })
-      .then((data) => {
-        setDirectories(data || []);
+        const data = await response.json();
+        setDirectories(data);
+      } catch (err) {
+        setError(`Failed to load directories: ${err.message}`);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        setError("Error loading directories");
-        setLoading(false);
-        console.error(err);
-      });
+      }
+    };
+
+    fetchData();
   }, [apiBase]);
 
-  const handleCreateFolder = async () => {
-    const folderName = prompt("Enter folder name");
-    if (folderName) {
-      const response = await fetch(`${apiBase}/folders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: folderName }),
-      });
-      const newFolder = await response.json();
-      setDirectories((prev) => [...prev, newFolder]);
-    }
-  };
-
-  const handleCreateFile = async (folderId) => {
-    const fileName = prompt("Enter file name");
-    if (fileName) {
-      const response = await fetch(`${apiBase}/files`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ folderId, name: fileName }),
-      });
-      const newFile = await response.json();
-      setDirectories((prev) =>
-        prev.map((folder) =>
-          folder.id === folderId
-            ? { ...folder, files: [...(folder.files || []), newFile] }
-            : folder
-        )
-      );
-    }
-  };
-
-  const handleRename = async (id) => {
-    const newName = prompt("Enter new folder name");
-    if (newName) {
-      const response = await fetch(`${apiBase}/folders/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newName }),
-      });
-      const updatedFolder = await response.json();
-      setDirectories((prev) =>
-        prev.map((folder) =>
-          folder.id === id ? { ...folder, name: updatedFolder.name } : folder
-        )
-      );
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this folder?"
-    );
-    if (confirmDelete) {
-      await fetch(`${apiBase}/folders/${id}`, { method: "DELETE" });
-      setDirectories((prev) => prev.filter((folder) => folder.id !== id));
-    }
-  };
-
-  const handleRenameFile = async (fileId, folderId) => {
-    const newName = prompt("Enter new file name");
-    if (newName) {
-      const response = await fetch(`${apiBase}/files/${fileId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newName }),
-      });
-      const updatedFile = await response.json();
-      setDirectories((prev) =>
-        prev.map((folder) =>
-          folder.id === folderId
-            ? {
-                ...folder,
-                files: folder.files.map((file) =>
-                  file.id === fileId ? updatedFile : file
-                ),
-              }
-            : folder
-        )
-      );
-    }
-  };
-
-  const handleDeleteFile = async (fileId, folderId) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this file?");
-    if (confirmDelete) {
-      await fetch(`${apiBase}/files/${fileId}`, { method: "DELETE" });
-      setDirectories((prev) =>
-        prev.map((folder) =>
-          folder.id === folderId
-            ? {
-                ...folder,
-                files: folder.files.filter((file) => file.id !== fileId),
-              }
-            : folder
-        )
-      );
-    }
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
+  if (loading) return <div>Loading directories...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="file-manager">
-      <button className="create-folder" onClick={handleCreateFolder}>
+      <button onClick={() => alert("Create Folder Feature Here!")}>
         Create Folder
       </button>
       <div>
-        {directories.map((dir) => (
-          <Folder
-            key={dir.id}
-            folder={dir}
-            handleRename={handleRename}
-            handleDelete={handleDelete}
-            handleRenameFile={handleRenameFile}
-            handleDeleteFile={handleDeleteFile}
-            handleCreateFile={handleCreateFile}
-          />
+        {directories.map((folder) => (
+          <Folder key={folder.id} folder={folder} />
         ))}
       </div>
     </div>
